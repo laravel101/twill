@@ -2,7 +2,7 @@
 
 namespace A17\Twill\Services\Uploader;
 
-use A17\Twill\Services\Uploader\SignS3UploadListener;
+use Illuminate\Config\Repository as Config;
 
 class SignS3Upload
 {
@@ -12,30 +12,43 @@ class SignS3Upload
 
     private $endpoint;
 
-    public function fromPolicy($policy, SignS3UploadListener $listener, $disk = 'libraries')
+    /**
+     * @var Config
+     */
+    protected $config;
+
+    /**
+     * @param Config $config
+     */
+    public function __construct(Config $config)
+    {
+        $this->config = $config;
+    }
+
+    public function fromPolicy($policy, SignUploadListener $listener, $disk = 'libraries')
     {
         $policyObject = json_decode($policy, true);
         $policyJson = json_encode($policyObject);
         $policyHeaders = $policyObject["headers"] ?? null;
 
-        $this->bucket = config('filesystems.disks.' . $disk . '.bucket');
-        $this->secret = config('filesystems.disks.' . $disk . '.secret');
+        $this->bucket = $this->config->get('filesystems.disks.' . $disk . '.bucket');
+        $this->secret = $this->config->get('filesystems.disks.' . $disk . '.secret');
         $this->endpoint = s3Endpoint($disk);
 
         if ($policyHeaders) {
-            $signedPolicy = $this->signChunkedRequest($policyHeaders, $listener);
+            $signedPolicy = $this->signChunkedRequest($policyHeaders);
         } else {
-            $signedPolicy = $this->signPolicy($policyJson, $listener);
+            $signedPolicy = $this->signPolicy($policyJson);
         }
 
         if ($signedPolicy) {
-            return $listener->policyIsSigned($signedPolicy);
+            return $listener->uploadIsSigned($signedPolicy);
         }
 
-        return $listener->policyIsNotValid();
+        return $listener->uploadIsNotValid();
     }
 
-    private function signPolicy($policyJson, $listener)
+    private function signPolicy($policyJson)
     {
         $policyObject = json_decode($policyJson, true);
 
@@ -89,7 +102,7 @@ class SignS3Upload
         return hash_hmac('sha256', $encodedPolicy, $signingKey);
     }
 
-    private function signChunkedRequest($policyHeaders, $listener)
+    private function signChunkedRequest($policyHeaders)
     {
         if ($this->isValidChunckRequest($policyHeaders)) {
             $signedRequest = array('signature' => $this->signV4ChunkRequest($policyHeaders));

@@ -3,6 +3,7 @@
 namespace A17\Twill\Models\Behaviors;
 
 use Dimsav\Translatable\Translatable;
+use Illuminate\Database\Query\JoinClause;
 
 trait HasTranslation
 {
@@ -10,7 +11,7 @@ trait HasTranslation
 
     public function getTranslationModelNameDefault()
     {
-        return "App\Models\Translations\\" . class_basename($this) . 'Translation';
+        return config('twill.namespace') . "\Models\Translations\\" . class_basename($this) . 'Translation';
     }
 
     public function scopeWithActiveTranslations($query, $locale = null)
@@ -21,11 +22,19 @@ trait HasTranslation
             $query->whereHas('translations', function ($query) use ($locale) {
                 $query->whereActive(true);
                 $query->whereLocale($locale);
+
+                if (config('translatable.use_property_fallback', false)) {
+                    $query->orWhere('locale', config('translatable.fallback_locale'));
+                }
             });
 
             return $query->with(['translations' => function ($query) use ($locale) {
                 $query->whereActive(true);
                 $query->whereLocale($locale);
+
+                if (config('translatable.use_property_fallback', false)) {
+                    $query->orWhere('locale', config('translatable.fallback_locale'));
+                }
             }]);
         }
     }
@@ -33,15 +42,20 @@ trait HasTranslation
     public function scopeOrderByTranslation($query, $orderField, $orderType = 'ASC', $locale = null)
     {
         $translationTable = $this->getTranslationsTable();
+        $localeKey = $this->getLocaleKey();
         $table = $this->getTable();
+        $keyName = $this->getKeyName();
         $locale = $locale == null ? app()->getLocale() : $locale;
 
-        return $query->join("{$translationTable} as t", "t.{$this->getRelationKey()}", "=", "{$table}.id")
-            ->where($this->getLocaleKey(), $locale)
-            ->groupBy("{$table}.id")
-            ->groupBy("t.{$orderField}")
-            ->select("{$table}.*")
-            ->orderBy("t.{$orderField}", $orderType)
+        return $query
+            ->join($translationTable, function (JoinClause $join) use ($translationTable, $localeKey, $table, $keyName) {
+                $join
+                    ->on($translationTable.'.'.$this->getRelationKey(), '=', $table.'.'.$keyName)
+                    ->where($translationTable.'.'.$localeKey, $this->locale());
+            })
+            ->where($translationTable.'.'.$this->getLocaleKey(), $locale)
+            ->orderBy($translationTable.'.'.$orderField, $orderType)
+            ->select($table.'.*')
             ->with('translations');
     }
 

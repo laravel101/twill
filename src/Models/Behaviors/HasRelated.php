@@ -4,6 +4,8 @@ namespace A17\Twill\Models\Behaviors;
 
 use A17\Twill\Models\RelatedItem;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 
 trait HasRelated
 {
@@ -25,7 +27,9 @@ trait HasRelated
 
     public function loadRelated($browser_name)
     {
-        $this->load('relatedItems');
+        if (!isset($this->relatedItems)) {
+            $this->load('relatedItems');
+        }
 
         return $this->relatedCache[$browser_name] = $this->relatedItems
             ->where('browser_name', $browser_name)
@@ -34,7 +38,7 @@ trait HasRelated
             });
     }
 
-    public function sync($items, $browser_name)
+    public function saveRelated($items, $browser_name)
     {
         RelatedItem::where([
             'browser_name' => $browser_name,
@@ -44,8 +48,8 @@ trait HasRelated
 
         $position = 1;
 
-        collect($items)->map(function ($item) {
-            return array_only($item, ['endpointType', 'id']);
+        Collection::make($items)->map(function ($item) {
+            return Arr::only($item, ['endpointType', 'id']);
         })->each(function ($values) use ($browser_name, &$position) {
             RelatedItem::create([
                 'subject_id' => $this->getKey(),

@@ -130,11 +130,12 @@ return [
         'filesize_limit' => env('MEDIA_LIBRARY_FILESIZE_LIMIT', 50),
         'allowed_extensions' => ['svg', 'jpg', 'gif', 'png', 'jpeg'],
         'init_alt_text_from_filename' => true,
+        'translated_form_fields' => false,
     ],
 ];
 ```
 
-Twill's media library supports the following endpoint types: `s3` and `local`. 
+Twill's media library supports the following endpoint types: `s3`, `azure` and `local`. 
 
 **S3 endpoint**
 
@@ -149,6 +150,20 @@ S3_BUCKET=bucket-name
 Optionally, you can use the `S3_REGION` variable to specify a region other than S3's default region (`us-east-1`).
 
 When uploading images to S3, Twill sets the `acl` parameter to `private`. This is because images in your bucket should not be publicly accessible when using a service like [Imgix](https://imgix.com) on top of it. Only Imgix should have read-only access to your bucket, while your application obviously needs to have write access. If you intend to access images uploaded to S3 directly, set the `MEDIA_LIBRARY_ACL` variable or `acl` configuration option to `public-read`.
+
+**Azure endpoint**
+
+Twill supports `azure` endpoint type to store your uploads on an Microsoft Azure container.
+ 
+To authorize uploads to Azure, provide your application with the following environment variables:
+
+```bash
+MEDIA_LIBRARY_ENDPOINT_TYPE=azure
+
+AZURE_ACCOUNT_KEY=AZURE_ACCOUNT_KEY
+AZURE_ACCOUNT_NAME=AZURE_ACCOUNT_NAME
+AZURE_CONTAINER=AZURE_CONTAINER
+```
 
 **Local endpoint**
 
