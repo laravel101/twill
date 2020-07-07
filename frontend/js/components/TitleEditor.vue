@@ -7,7 +7,7 @@
         </a>
         <span v-else>{{ customTitle ? customTitle : title }}</span>
       </h2>
-      <a v-if="permalink" :href="fullUrl" target="_blank" class="titleEditor__permalink f--small">
+      <a v-if="permalink || customPermalink" :href="fullUrl" target="_blank" class="titleEditor__permalink f--small">
         <span class="f--note f--external f--underlined--o">{{ visibleUrl | prettierUrl }}</span>
       </a>
 
@@ -27,8 +27,8 @@
 <script>
   import { mapState, mapGetters } from 'vuex'
   import a17VueFilters from '@/utils/filters.js'
-  import a17ModalValidationButtons from '@/components/modals/ModalValidationButtons.vue'
   import langManager from '@/components/LangManager.vue'
+  import a17ModalValidationButtons from '@/components/modals/ModalValidationButtons.vue'
 
   import InputframeMixin from '@/mixins/inputFrame'
   import LocaleMixin from '@/mixins/locale'
@@ -59,6 +59,10 @@
       customTitle: {
         type: String,
         default: ''
+      },
+      customPermalink: {
+        type: String,
+        default: ''
       }
     },
     data: function () {
@@ -76,19 +80,19 @@
         return this.title.length > 0 ? 'update' : 'create'
       },
       fullUrl: function () {
-        return this.baseUrl
+        return this.customPermalink || this.baseUrl
           .replace('{language}', this.currentLocale.value)
           .replace('{preview}/', this.published ? '' : 'admin-preview/') + this.permalink
       },
       visibleUrl: function () {
-        return this.baseUrl
+        return this.customPermalink || this.baseUrl
           .replace('{language}', this.currentLocale.value)
           .replace('{preview}/', '') + this.permalink
       },
       title: function () {
         // Get the title from the store
         const title = this.fieldValueByName(this.name) ? this.fieldValueByName(this.name) : ''
-        const titleValue = typeof title === 'string' ? title : title[this.currentLocale['value']]
+        const titleValue = typeof title === 'string' ? title : title[this.currentLocale.value]
         return titleValue || this.warningMessage
       },
       permalink: function () {
@@ -118,7 +122,6 @@
 </script>
 
 <style lang="scss" scoped>
-  @import '~styles/setup/_mixins-colors-vars.scss';
 
   .titleEditor {
     margin-bottom: 20px;

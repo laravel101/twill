@@ -5,11 +5,12 @@ namespace A17\Twill\Models;
 use A17\Twill\Models\Behaviors\HasFiles;
 use A17\Twill\Models\Behaviors\HasMedias;
 use A17\Twill\Models\Behaviors\HasPresenter;
+use A17\Twill\Models\Behaviors\HasRelated;
 use Illuminate\Database\Eloquent\Model as BaseModel;
 
 class Block extends BaseModel
 {
-    use HasMedias, HasFiles, HasPresenter;
+    use HasMedias, HasFiles, HasPresenter, HasRelated;
 
     public $timestamps = false;
 
@@ -47,7 +48,13 @@ class Block extends BaseModel
     public function translatedInput($name, $forceLocale = null)
     {
         $value = $this->content[$name] ?? null;
-        $locale = $forceLocale ?? app()->getLocale();
+
+        $locale = $forceLocale ?? (
+            config('translatable.use_property_fallback', false) && (!array_key_exists(app()->getLocale(), $value ?? []))
+            ? config('translatable.fallback_locale')
+            : app()->getLocale()
+        );
+
         return $value[$locale] ?? null;
     }
 
@@ -68,5 +75,10 @@ class Block extends BaseModel
         }
 
         return null;
+    }
+
+    public function getTable()
+    {
+        return config('twill.blocks_table', 'twill_blocks');
     }
 }

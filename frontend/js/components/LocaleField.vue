@@ -9,6 +9,8 @@
         :locale="language"
         @localize="updateLocale"
         @change="updateValue(language.value, ...arguments)"
+        @blur="$emit('blur')"
+        @focus="$emit('focus')"
       ><slot></slot></component>
     </div>
     </template>
@@ -17,6 +19,8 @@
         :name="attributes.name"
         v-bind="attributesNoLang()"
         @change="updateValue(false, ...arguments)"
+        @blur="$emit('blur')"
+        @focus="$emit('focus')"
       ><slot></slot></component>
     </template>
   </div>
@@ -25,6 +29,8 @@
 <script>
   import { mapState } from 'vuex'
   import { LANGUAGE } from '@/store/mutations'
+
+  import cloneDeep from 'lodash/cloneDeep'
 
   export default {
     name: 'A17Locale',
@@ -62,12 +68,11 @@
       attributesPerLang: function (lang) {
         const language = this.languages.find(l => l.value === lang)
 
-        let attributes = Object.assign({}, this.attributes)
-
+        const attributes = cloneDeep(this.attributes)
         // for textfields set initial values using the initialValues prop
-        if (this.initialValues[lang]) {
+        if (this.initialValues && typeof this.initialValues === 'object' && this.initialValues[lang]) {
           attributes.initialValue = this.initialValues[lang]
-        } else {
+        } else if (!attributes.initialValue) {
           attributes.initialValue = ''
         }
 
@@ -76,7 +81,7 @@
         return attributes
       },
       attributesNoLang: function () {
-        let attributes = Object.assign({}, this.attributes)
+        const attributes = cloneDeep(this.attributes)
         // for textfields set initial values using the initialValue prop
         if (this.initialValue) attributes.initialValue = this.initialValue
         return attributes

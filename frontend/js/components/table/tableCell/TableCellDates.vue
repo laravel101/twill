@@ -40,8 +40,8 @@
     computed: {
       formatDateLabel: function () {
         let label = ''
-        let scoreStart = compareAsc(this.startDate, new Date())
-        let scoreEnd = this.endDate ? compareAsc(this.endDate, new Date()) : 1
+        const scoreStart = compareAsc(this.startDate, new Date())
+        const scoreEnd = this.endDate ? compareAsc(this.endDate, new Date()) : 1
 
         if (this.startDate && scoreEnd < 0) label = this.textExpired
         else if (scoreStart > 0) label = this.textScheduled
@@ -52,7 +52,7 @@
         return this.row.hasOwnProperty('publish_start_date') ? this.row.publish_start_date : ''
       },
       endDate: function () {
-        return this.row.hasOwnProperty('publish_end_date') ? this.row.publish_start_date : ''
+        return this.row.hasOwnProperty('publish_end_date') ? this.row.publish_end_date : ''
       }
     },
     filters: a17VueFilters
@@ -60,7 +60,6 @@
 </script>
 
 <style lang="scss" scoped>
-  @import '~styles/setup/_mixins-colors-vars.scss';
 
   /* Publication dates */
   .tablecell__datePub {

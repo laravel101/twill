@@ -2,7 +2,7 @@
   <div class="accordion" :class="visibilityClasses">
     <button type="button" class="accordion__trigger" @click="onClickVisibility" :aria-expanded="visible ?  'true' : 'false'" >
       <slot name="accordion__title"></slot>
-      <div class="accordion__value"><slot name="accordion__value"></slot></div>
+      <span class="accordion__value"><slot name="accordion__value"></slot></span>
       <span v-svg symbol="dropdown_module"></span>
     </button>
     <transition :css="false" :duration="275" @before-enter="beforeEnter" @before-leave="beforeLeave" @enter="enter" @leave="leave">
@@ -49,7 +49,6 @@
 </script>
 
 <style lang="scss" scoped>
-  @import '~styles/setup/_mixins-colors-vars.scss';
 
   .accordion {
     border-bottom:1px solid $color__border--light;
@@ -63,6 +62,7 @@
     color:$color__text;
     display:flex;
     flex-flow: row nowrap;
+    align-items: center;
 
     &:hover,
     &:focus {
@@ -97,14 +97,6 @@
   .accordion__list {
     border-top:1px solid $color__border--light;
     padding:12px 20px;
-
-    /deep/ .input {
-      margin-top:0;
-
-      + .input {
-        margin-top:10px;
-      }
-    }
   }
 
   .accordion__fields {
@@ -128,6 +120,20 @@
 
     .icon {
       transform:rotate(180deg);
+    }
+  }
+</style>
+
+<style lang="scss">
+  .accordion {
+    .accordion__list {
+      .input {
+        margin-top: 0;
+
+        + .input {
+          margin-top: 10px;
+        }
+      }
     }
   }
 </style>

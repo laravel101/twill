@@ -170,7 +170,6 @@
 </script>
 
 <style lang="scss" scoped>
-  @import '~styles/setup/_mixins-colors-vars.scss';
 
   .modal {
     position:fixed;
@@ -355,9 +354,11 @@
   .modal--hidden {
     display: none;
   }
+</style>
 
+<style lang="scss">
   /* Tiny modal option */
- .modal--tiny /deep/ .modal--tiny-title {
-   margin-bottom: 20px;
- }
+  .modal .modal--tiny .modal--tiny-title {
+    margin-bottom: 20px;
+  }
 </style>

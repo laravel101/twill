@@ -98,7 +98,7 @@
         return {
           'margin-top': this.isPosition('bottom') ? this.offset + 'px' : '',
           'margin-bottom': this.isPosition('top') ? this.offset + 'px' : '',
-          'transform': this.sideOffset ? 'translateX(' + this.sideOffset + 'px)' : '',
+          transform: this.sideOffset ? 'translateX(' + this.sideOffset + 'px)' : '',
           'max-width': this.currentMaxWidth > 0 && this.width !== 'full' ? this.currentMaxWidth + 'px' : '',
           'min-width': this.minWidth > 0 ? this.minWidth + 'px' : ''
         }
@@ -106,7 +106,7 @@
       innerStyle: function () {
         return {
           'max-height': this.maxHeight > 0 ? this.maxHeight + 'px' : '',
-          'overflow': this.maxHeight > 0 ? 'hidden' : '',
+          overflow: this.maxHeight > 0 ? 'hidden' : '',
           'overflow-y': this.maxHeight > 0 ? 'scroll' : ''
         }
       }
@@ -232,7 +232,6 @@
 </script>
 
 <style lang="scss" scoped>
-  @import '~styles/setup/_mixins-colors-vars.scss';
 
   .dropdown {
     display:inherit;
@@ -247,14 +246,6 @@
       position: fixed;
     }
   }
-
-  // .dropdown__content {
-  // }
-
-  // .dropdown--active {
-  //   .dropdown__content {
-  //   }
-  // }
 
   .dropdown--bottom .dropdown__position {
     top: 100%;
@@ -294,57 +285,6 @@
 
   .dropdown__content {
     max-width:300px;
-
-    /deep/ button {
-      @include btn-reset;
-      width:100%;
-      background:transparent;
-      text-align:left;
-      width:100%;
-    }
-
-    /deep/ a,
-    /deep/ button {
-      display:block;
-      color:$color__text--light;
-      font-size:1em;
-      padding:0 15px;
-      padding-right:50px;
-      height:40px;
-      line-height: 40px;
-      text-decoration: none;
-      white-space: nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      border-radius:0;
-
-      &:hover {
-        color:$color__text;
-        background:$color__light;
-      }
-
-      &.dropdown__active {
-        color:$color__text;
-        background:$color__light;
-      }
-
-      .icon {
-        margin-right:10px;
-      }
-    }
-
-    /deep/ .checkboxGroup__item,
-    /deep/ .radioGroup__item {
-      margin:0 -15px;
-      padding-right:50px;
-      padding-left:15px;
-      display:block;
-    }
-
-    /deep/ .checkbox,
-    /deep/ .checkbox label {
-      display:block;
-    }
   }
 
   .dropdown--full .dropdown__position {
@@ -363,11 +303,6 @@
     border-radius:2px;
     box-shadow:$box-shadow;
     max-width:calc(100vw - 10px);
-
-    /deep/ .input {
-      margin-top:0;
-      padding:0 15px;
-    }
   }
 
   .dropdown__scroller {
@@ -433,5 +368,74 @@
     left: 50%;
     margin-left:-25px;
   }
+</style>
 
+<style lang="scss">
+
+  .dropdown {
+    .dropdown__content {
+      button {
+        @include btn-reset;
+        width: 100%;
+        background: transparent;
+        text-align: left;
+
+        &:disabled {
+          cursor: default;
+          pointer-events: none;
+          opacity: .5;
+        }
+      }
+
+       a,
+       button {
+        display: block;
+        color: $color__text--light;
+        font-size: 1em;
+        padding: 0 15px;
+        padding-right: 50px;
+        height: 40px;
+        line-height: 40px;
+        text-decoration: none;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        border-radius: 0;
+
+        &:hover {
+          color: $color__text;
+          background: $color__light;
+        }
+
+        &.dropdown__active {
+          color: $color__text;
+          background: $color__light;
+        }
+
+        .icon {
+          margin-right: 10px;
+        }
+      }
+
+       .checkboxGroup__item,
+       .radioGroup__item {
+        margin: 0 -15px;
+        padding-right: 50px;
+        padding-left: 15px;
+        display: block;
+      }
+
+       .checkbox,
+       .checkbox label {
+        display: block;
+      }
+    }
+
+    .dropdown__inner {
+      .input {
+        margin-top: 0;
+        padding: 0 15px;
+      }
+    }
+  }
 </style>

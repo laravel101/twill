@@ -32,8 +32,9 @@
       </div>
     </div>
     <div class="block__content" :aria-hidden="!visible ? true : null">
-      <a17-inputframe label="" :name="`block.${block.id}`"></a17-inputframe>
       <component v-bind:is="`${block.type}`" :name="componentName(block.id)" v-bind="block.attributes" key="`form_${block.type}_${block.id}`"><!-- dynamic components --></component>
+      <!-- Block validation input frame, to display errors -->
+      <a17-inputframe size="small" label="" :name="`block.${block.id}`"/>
     </div>
   </div>
 </template>
@@ -79,8 +80,8 @@
     computed: {
       blockClasses: function () {
         return [
-          this.visible ? `block--open` : '',
-          this.hover ? `block--focus` : '',
+          this.visible ? 'block--open' : '',
+          this.hover ? 'block--focus' : '',
           this.size ? `block--${this.size}` : ''
         ]
       },
@@ -119,11 +120,10 @@
 </script>
 
 <style lang="scss" scoped>
-  @import '~styles/setup/_mixins-colors-vars.scss';
 
   .block__content {
     display:none;
-    padding:15px;
+    padding:35px 15px;
     background:$color__background;
   }
 
@@ -260,36 +260,10 @@
     > .media,
     > .slideshow,
     > .browserField {
-      margin:-15px;
+      margin:-35px;
       border:0 none;
     }
-
-    /deep/ .input {
-      margin-top: 15px;
-    }
-
-    /deep/ .block__body {
-      > .media,
-      > .slideshow,
-      > .browserField {
-        margin-left:-15px;
-        margin-right:-15px;
-        border:0 none;
-      }
-
-      > .media:last-child,
-      > .slideshow:last-child,
-      > .browserField:last-child {
-        margin-bottom:-15px;
-      }
-    }
   }
-
-  // .block__content {
-  //   /deep/ .input {
-  //     margin-top:15px;
-  //   }
-  // }
 
   // Small blocks (for repeater inside the block editor)
   .block--small {
@@ -313,13 +287,31 @@
       }
     }
 
-    // .block__title {
-    //   font-weight:normal;
-    // }
-
     .block__counter {
       display:none;
     }
   }
 
+</style>
+
+<style lang="scss">
+  .block {
+    .block__content {
+      .block__body {
+        > .media,
+        > .slideshow,
+        > .browserField {
+          margin-left: -15px;
+          margin-right: -15px;
+          border: 0 none;
+        }
+
+        > .media:last-child,
+        > .slideshow:last-child,
+        > .browserField:last-child {
+          margin-bottom: -15px;
+        }
+      }
+    }
+  }
 </style>

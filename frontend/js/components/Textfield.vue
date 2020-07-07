@@ -136,7 +136,7 @@
       textfieldClasses: function () {
         return {
           'input__field--textarea': this.type === 'textarea',
-          'input__field--small': this.size === 'small',
+          'input__field--small': this.size === 'small' && !this.type === 'textarea',
           's--focus': this.focused,
           's--disabled': this.disabled
         }
@@ -168,11 +168,6 @@
     watch: {
       initialValue: function () {
         this.updateValue(this.initialValue)
-      },
-      submitting: function () {
-        if (this.submitting) { // The form is about to submit so lets make sure we are saving the textfield
-          this.updateAndSaveValue(this.$refs.input.value)
-        }
       }
     },
     methods: {
@@ -180,7 +175,6 @@
         if (typeof newValue === 'undefined') newValue = ''
 
         if (this.value !== newValue) {
-          console.warn('Update UI value : ' + this.name + ' -> ' + newValue)
           this.updateValue(newValue)
         }
       },
@@ -190,12 +184,8 @@
       },
       updateAndSaveValue: function (newValue) {
         this.updateValue(newValue)
-
-        // Only save into the store if something changed from the moment you focused the field
-        if (this.value === '' || this.lastSavedValue !== this.value) {
-          this.lastSavedValue = this.value
-          this.saveIntoStore() // see formStore mixin
-        }
+        this.lastSavedValue = this.value
+        this.saveIntoStore() // see formStore mixin
       },
       updateCounter: function (newValue) {
         if (this.maxlength > 0) this.counter = this.maxlength - (newValue ? newValue.toString().length : 0)
@@ -208,14 +198,14 @@
         this.$emit('focus')
       },
       onBlur: function (event) {
-        let newValue = event.target.value
+        const newValue = event.target.value
         this.updateAndSaveValue(newValue)
 
         this.focused = false
         this.$emit('blur', newValue)
       },
       onInput: debounce(function (event) {
-        let newValue = event.target.value
+        const newValue = event.target.value
         this.updateAndSaveValue(newValue)
 
         this.$emit('change', newValue)
@@ -227,7 +217,7 @@
         const minH = 15
 
         if (clone) {
-          let h = clone.scrollHeight
+          const h = clone.scrollHeight
           this.$refs.input.style.minHeight = `${h + minH}px`
         }
       }
@@ -251,7 +241,6 @@
 </script>
 
 <style lang="scss" scoped>
-  @import '~styles/setup/_mixins-colors-vars.scss';
 
   $height_input: 45px;
 

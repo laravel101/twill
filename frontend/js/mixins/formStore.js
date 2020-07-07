@@ -63,7 +63,7 @@ export default {
       else newValue = this[this.inStore]
 
       // The object that is saved
-      let field = {}
+      const field = {}
       field.name = this.getFieldName()
       field.value = newValue
       if (this.locale) field.locale = this.locale.value
@@ -95,7 +95,6 @@ export default {
       }
     } else if (this.hasDefaultStore) {
       // init value with the one present into the component itself
-      // used for select / single-selects
       this.saveIntoStore()
     }
   },

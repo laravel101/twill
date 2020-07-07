@@ -6,7 +6,10 @@
           <a17-dropdown class="f--small" position="bottom-left" :ref="moveDropdown(index)" :maxHeight="270">
             <span class="editorSidebar__counter f--tiny" @click="toggleDropdown(index)">{{ index + 1 }}</span>
             <div slot="dropdown__content">
-              <button type="button" v-for="n in blocks.length" @click="moveBlock(index, n - 1)">{{ n }}</button>
+              <button type="button"
+                      v-for="n in blocks.length"
+                      :key="n"
+                      @click="moveBlock(index, n - 1)">{{ n }}</button>
             </div>
           </a17-dropdown>{{ activeBlock.title }}
         </div>
@@ -15,7 +18,7 @@
         </span>
       </div>
       <div class="editorSidebar__body">
-        <a17-inputframe label="" :name="`block.${block.id}`"></a17-inputframe>
+        <a17-inputframe label="" :name="`block.${block.id}`"/>
         <component v-bind:is="`${block.type}`" :name="componentName(block.id)" v-bind="block.attributes" key="`editor_${block.type}_${block.id}`"></component>
       </div>
     </div>
@@ -29,7 +32,8 @@
         </draggable>
       </div>
       <div class="editorSidebar__actions">
-        <a17-button @click="saveForm(submitOptions[0].name)" :name="submitOptions[0].name" variant="validate">{{ submitOptions[0].text }}</a17-button>
+        <a17-button v-if="isSubmitDisabled(submitOptions[0])" variant="validate" :disabled="true">{{ submitOptions[0].text }}</a17-button>
+        <a17-button v-else @click="saveForm(submitOptions[0].name)" :name="submitOptions[0].name" variant="validate">{{ submitOptions[0].text }}</a17-button>
       </div>
     </template>
     <template v-else>
@@ -72,6 +76,13 @@
       })
     },
     methods: {
+      isSubmitDisabled: function (btn) {
+        if (btn.hasOwnProperty('disabled')) {
+          return btn.disabled === true
+        } else {
+          return false
+        }
+      },
       toggleDropdown: function (index) {
         if (this.blocks.length > 1) {
           const ddName = this.moveDropdown(index)
@@ -108,7 +119,7 @@
       },
       saveForm: function (buttonName) {
         this.$store.commit(PUBLICATION.UPDATE_SAVE_TYPE, buttonName)
-        if (this.$root['submitForm']) this.$root.submitForm()
+        if (this.$root.submitForm) this.$root.submitForm()
       }
     },
     mounted: function () {
@@ -117,7 +128,6 @@
 </script>
 
 <style lang="scss" scoped>
-  @import '~styles/setup/_mixins-colors-vars.scss';
 
   .editorSidebar {
     margin:20px 0 20px 0;
@@ -140,7 +150,7 @@
   }
 
   .editorSidebar__list {
-    height:100%;
+    height: calc(100% - 60px);
   }
 
   .editorSidebar__title {
@@ -153,26 +163,6 @@
     border-radius:2px;
     background:$color__background;
     padding:15px;
-
-    /deep/ .input {
-      margin-top: 15px;
-    }
-
-    /deep/ .block__body {
-      > .media,
-      > .slideshow,
-      > .browserField {
-        margin-left:-15px;
-        margin-right:-15px;
-        border:0 none;
-      }
-
-      > .media:last-child,
-      > .slideshow:last-child,
-      > .browserField:last-child {
-        margin-bottom:-15px;
-      }
-    }
   }
 
   .editorSidebar__counter {
@@ -267,6 +257,26 @@
 
       .icon {
         color:$color__text;
+      }
+    }
+  }
+</style>
+
+<style lang="scss">
+  .editorSidebar__body {
+    .block__body {
+      > .media,
+      > .slideshow,
+      > .browserField {
+        margin-left: -15px;
+        margin-right: -15px;
+        border: 0 none;
+      }
+
+      > .media:last-child,
+      > .slideshow:last-child,
+      > .browserField:last-child {
+        margin-bottom: -15px;
       }
     }
   }

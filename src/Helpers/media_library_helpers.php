@@ -1,15 +1,36 @@
 <?php
 
-if (!function_exists('s3Enpoint')) {
+use Illuminate\Support\Facades\Storage;
+
+if (!function_exists('s3Endpoint')) {
+    /**
+     * @param string $disk
+     * @return string
+     */
     function s3Endpoint($disk = 'libraries')
     {
         $scheme = config("filesystems.disks.{$disk}.use_https") ? 'https://' : '';
-
         return $scheme . config("filesystems.disks.{$disk}.bucket") . '.' . Storage::disk($disk)->getAdapter()->getClient()->getEndpoint()->getHost();
     }
 }
 
+if (!function_exists('azureEndpoint')) {
+    /**
+     * @param string $disk
+     * @return string
+     */
+    function azureEndpoint($disk = 'libraries')
+    {
+        $scheme = config("filesystems.disks.{$disk}.use_https") ? 'https://' : '';
+        return $scheme . config("filesystems.disks.{$disk}.name") . '.blob.' . config("filesystems.disks.{$disk}.endpoint-suffix") . '/' . config("filesystems.disks.{$disk}.container");
+    }
+}
+
 if (!function_exists('bytesToHuman')) {
+    /**
+     * @param float $bytes
+     * @return string
+     */
     function bytesToHuman($bytes)
     {
         $units = ['B', 'Kb', 'Mb', 'Gb', 'Tb', 'Pb'];
@@ -23,6 +44,10 @@ if (!function_exists('bytesToHuman')) {
 }
 
 if (!function_exists('replaceAccents')) {
+    /**
+     * @param string $str
+     * @return bool|string
+     */
     function replaceAccents($str)
     {
         return iconv('UTF-8', 'ASCII//TRANSLIT', $str);
@@ -30,6 +55,10 @@ if (!function_exists('replaceAccents')) {
 }
 
 if (!function_exists('sanitizeFilename')) {
+    /**
+     * @param string $filename
+     * @return string
+     */
     function sanitizeFilename($filename)
     {
         $sanitizedFilename = replaceAccents($filename);

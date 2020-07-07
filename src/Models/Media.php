@@ -2,14 +2,14 @@
 
 namespace A17\Twill\Models;
 
-use DB;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use ImageService;
 
 class Media extends Model
 {
     public $timestamps = true;
-
-    public $table = 'medias';
 
     protected $fillable = [
         'uuid',
@@ -20,6 +20,19 @@ class Media extends Model
         'height',
     ];
 
+    public function __construct(array $attributes = [])
+    {
+        $this->fillable(array_merge($this->fillable, Collection::make(config('twill.media_library.extra_metadatas_fields'))->map(function ($field) {
+            return $field['name'];
+        })->toArray()));
+
+        Collection::make(config('twill.media_library.translatable_metadatas_fields'))->each(function ($field) {
+            $this->casts[$field] = 'json';
+        });
+
+        parent::__construct($attributes);
+    }
+
     public function getDimensionsAttribute()
     {
         return $this->width . 'x' . $this->height;
@@ -28,7 +41,7 @@ class Media extends Model
     public function altTextFrom($filename)
     {
         $filename = pathinfo($filename, PATHINFO_FILENAME);
-        if (ends_with($filename, '@2x')) {
+        if (Str::endsWith($filename, '@2x')) {
             $filename = substr($filename, 0, -2);
         }
 
@@ -37,7 +50,7 @@ class Media extends Model
 
     public function canDeleteSafely()
     {
-        return DB::table('mediables')->where('media_id', $this->id)->count() === 0;
+        return DB::table(config('twill.mediables_table', 'twill_mediables'))->where('media_id', $this->id)->count() === 0;
     }
 
     public function toCmsArray()
@@ -50,6 +63,29 @@ class Media extends Model
             'medium' => ImageService::getUrl($this->uuid, ["h" => "430"]),
             'width' => $this->width,
             'height' => $this->height,
+            'tags' => $this->tags->map(function ($tag) {
+                return $tag->name;
+            }),
+            'deleteUrl' => $this->canDeleteSafely() ? moduleRoute('medias', 'media-library', 'destroy', $this->id) : null,
+            'updateUrl' => route('admin.media-library.medias.single-update'),
+            'updateBulkUrl' => route('admin.media-library.medias.bulk-update'),
+            'deleteBulkUrl' => route('admin.media-library.medias.bulk-delete'),
+            'metadatas' => [
+                'default' => [
+                    'caption' => $this->caption,
+                    'altText' => $this->alt_text,
+                    'video' => null,
+                ] + Collection::make(config('twill.media_library.extra_metadatas_fields'))->mapWithKeys(function ($field) {
+                    return [
+                        $field['name'] => $this->{$field['name']},
+                    ];
+                })->toArray(),
+                'custom' => [
+                    'caption' => null,
+                    'altText' => null,
+                    'video' => null,
+                ],
+            ],
         ];
     }
 
@@ -57,12 +93,38 @@ class Media extends Model
     {
         $metadatas = (object) json_decode($this->pivot->metadatas);
         $language = app()->getLocale();
-        $fallback = $fallback ? $this->$fallback : $this->name;
 
-        return $metadatas->$name->$language ?? (
-            is_object($metadatas->$name ?? null)
-            ? ($fallback ?? '')
-            : ($metadatas->$name ?? $fallback)
-        );
+        if ($metadatas->$name->$language ?? false) {
+            return $metadatas->$name->$language;
+        }
+
+        $fallbackLocale = config('translatable.fallback_locale');
+
+        if (in_array($name, config('twill.media_library.translatable_metadatas_fields', [])) && config('translatable.use_property_fallback', false) && ($metadatas->$name->$fallbackLocale ?? false)) {
+            return $metadatas->$name->$fallbackLocale;
+        }
+
+        $fallbackValue = $fallback ? $this->$fallback : $this->$name;
+
+        $fallback = $fallback ?? $name;
+
+        if (in_array($fallback, config('twill.media_library.translatable_metadatas_fields', []))) {
+            $fallbackValue = $fallbackValue[$language] ?? '';
+
+            if ($fallbackValue === '' && config('translatable.use_property_fallback', false)) {
+                $fallbackValue = $this->$fallback[config('translatable.fallback_locale')] ?? '';
+            }
+        }
+
+        if (is_object($metadatas->$name ?? null)) {
+            return $fallbackValue ?? '';
+        }
+
+        return $metadatas->$name ?? $fallbackValue ?? '';
+    }
+
+    public function getTable()
+    {
+        return config('twill.medias_table', 'twill_medias');
     }
 }

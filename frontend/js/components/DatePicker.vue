@@ -106,7 +106,7 @@
     },
     methods: {
       config: function () {
-        let self = this
+        const self = this
         return {
           wrap: true,
           altInput: true,
@@ -163,28 +163,21 @@
       }
     },
     mounted: function () {
-      let self = this
-      let el = self.$refs[self.refs.flatPicker]
-      let opts = self.config()
+      const self = this
+      const el = self.$refs[self.refs.flatPicker]
+      const opts = self.config()
       self.flatPicker = new FlatPickr(el, opts)
 
       this.isMobile = self.flatPicker.isMobile
     },
     beforeDestroy: function () {
-      let self = this
+      const self = this
       self.flatPicker.destroy()
     }
   }
 </script>
 
 <style lang="scss" scoped>
-  @import '~styles/setup/_mixins-colors-vars.scss';
-
-  // .datePicker {
-  // }
-
-  // .datePicker__group {
-  // }
 
   .datePicker__field {
     display: flex;
@@ -242,23 +235,27 @@
   .flatpickr-wrapper {
     display:block;
   }
+</style>
 
-  /* Mobile bersion */
-  .datePicker__group /deep/ input.flatpickr-input.flatpickr-mobile {
-    width:100%;
+<style lang="scss">
+  /* Mobile version */
+  .datePicker__group input.flatpickr-input.flatpickr-mobile {
+    width: 100%;
     font-family: inherit;
     font-size: inherit;
-    background:transparent;
-    border:0 none;
+    background: transparent;
+    border: 0 none;
     padding: 0 15px;
     -webkit-appearance: none;
 
     &::-webkit-clear-button {
       display: none;
     }
+
     &::-webkit-inner-spin-button {
       display: none;
     }
+
     &::-webkit-calendar-picker-indicator {
       display: none;
     }

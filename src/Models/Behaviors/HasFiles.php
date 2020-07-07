@@ -9,18 +9,35 @@ trait HasFiles
 {
     public function files()
     {
-        return $this->morphToMany(File::class, 'fileable')->withPivot(['role', 'locale'])->withTimestamps();
+        return $this->morphToMany(
+            File::class,
+            'fileable',
+            config('twill.fileables_table', 'twill_fileables')
+        )->withPivot(['role', 'locale'])->withTimestamps();
+    }
+
+    private function findFile($role, $locale)
+    {
+        $locale = $locale ?? app()->getLocale();
+
+        $file = $this->files->first(function ($file) use ($role, $locale) {
+            return $file->pivot->role === $role && $file->pivot->locale === $locale;
+        });
+
+        if (!$file && config('translatable.use_property_fallback', false)) {
+            $file = $this->files->first(function ($file) use ($role) {
+                return $file->pivot->role === $role && $file->pivot->locale === config('translatable.fallback_locale');
+            });
+        }
+
+        return $file;
     }
 
     public function file($role, $locale = null, $file = null)
     {
-        $locale = $locale ?? app()->getLocale();
 
         if (!$file) {
-            $file = $this->files->first(function ($file) use ($role, $locale) {
-                $localeScope = ($locale === 'fallback') ? true : ($file->pivot->locale === $locale);
-                return $file->pivot->role === $role && $localeScope;
-            });
+            $file = $this->findFile($role, $locale);
         }
 
         if ($file) {
@@ -49,11 +66,7 @@ trait HasFiles
 
     public function fileObject($role, $locale = null)
     {
-        $locale = $locale ?? app()->getLocale();
-
-        return $this->files->first(function ($file, $key) use ($role, $locale) {
-            return $file->pivot->role === $role && $file->pivot->locale === $locale;
-        });
+        return $this->findFile($role, $locale);
     }
 
 }

@@ -13,7 +13,7 @@ trait HandleSlugs
                     $currentSlug = [];
                     $currentSlug['slug'] = $fields['slug'][$locale];
                     $currentSlug['locale'] = $locale;
-                    $currentSlug['active'] = property_exists($this->model, 'translatedAttributes') ? $object->translate($locale)->active : 1;
+                    $currentSlug['active'] = $this->model->isTranslatable() ? $object->translate($locale)->active : 1;
                     $currentSlug = $this->getSlugParameters($object, $fields, $currentSlug);
                     $object->updateOrNewSlug($currentSlug);
                 }
@@ -75,6 +75,17 @@ trait HandleSlugs
 
         if (!$item && $item = (clone $query)->forInactiveSlug($slug)->first()) {
             $item->redirect = true;
+        }
+
+        if (!$item && config('translatable.use_property_fallback', false)
+        && config('translatable.fallback_locale') != config('app.locale')) {
+            $item = (clone $query)->orWhere(function ($query) {
+                return $query->withActiveTranslations(config('translatable.fallback_locale'));
+            })->forFallbackLocaleSlug($slug)->first();
+
+            if ($item) {
+                $item->redirect = true;
+            }
         }
 
         return $item;

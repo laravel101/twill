@@ -2,10 +2,26 @@
 
 namespace A17\Twill\Repositories\Behaviors;
 
-use Auth;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 
 trait HandleRevisions
 {
+    public function hydrateHandleRevisions($object, $fields)
+    {
+        // HandleRepeaters trait => getRepeaters
+        foreach($this->getRepeaters() as $repeater) {
+            $this->hydrateRepeater($object, $fields, $repeater['relation'], $repeater['model']);
+        }
+
+        // HandleBrowers trait => getBrowsers
+        foreach($this->getBrowsers() as $browser) {
+            $this->hydrateBrowser($object, $fields, $browser['relation'], $browser['positionAttribute'], $browser['model']);
+        }
+
+        return $object;
+    }
 
     public function beforeSaveHandleRevisions($object, $fields)
     {
@@ -32,7 +48,7 @@ trait HandleRevisions
     {
         $fields = $this->prepareFieldsBeforeSave($object, $fields);
 
-        $object->fill(array_except($fields, $this->getReservedFields()));
+        $object->fill(Arr::except($fields, $this->getReservedFields()));
 
         $object = $this->hydrate($object, $fields);
 
@@ -45,7 +61,10 @@ trait HandleRevisions
 
         $fields = json_decode($object->revisions->where('id', $revisionId)->first()->payload, true);
 
-        return $this->hydrateObject($this->model->newInstance(), $fields);
+        $hydratedObject = $this->hydrateObject($this->model->newInstance(), $fields);
+        $hydratedObject->id = $id;
+
+        return $hydratedObject;
     }
 
     public function hydrateMultiSelect($object, $fields, $relationship, $model = null, $customHydratedRelationship = null)
@@ -54,7 +73,7 @@ trait HandleRevisions
         $relatedElements = $fieldsHasElements ? $fields[$relationship] : [];
 
         $relationRepository = $this->getModelRepository($relationship, $model);
-        $relatedElementsCollection = collect();
+        $relatedElementsCollection = Collection::make();
 
         foreach ($relatedElements as $relatedElement) {
             $newRelatedElement = $relationRepository->getById($relatedElement);
@@ -75,7 +94,7 @@ trait HandleRevisions
         $relatedElements = $fieldsHasElements ? $fields['browsers'][$relationship] : [];
 
         $relationRepository = $this->getModelRepository($relationship, $model);
-        $relatedElementsCollection = collect();
+        $relatedElementsCollection = Collection::make();
         $position = 1;
 
         foreach ($relatedElements as $relatedElement) {
@@ -94,7 +113,7 @@ trait HandleRevisions
 
         $relationRepository = $this->getModelRepository($relationship, $model);
 
-        $repeaterCollection = collect();
+        $repeaterCollection = Collection::make();
 
         foreach ($relationFields as $index => $relationField) {
             $relationField['position'] = $index + 1;
@@ -111,7 +130,8 @@ trait HandleRevisions
 
     public function getCountForMine()
     {
-        return $this->model->where($this->countScope)->mine()->count();
+        $query = $this->model->newQuery();
+        return $this->filter($query, $this->countScope)->mine()->count();
     }
 
     public function getCountByStatusSlugHandleRevisions($slug)

@@ -18,6 +18,7 @@ import A17GenericFeed from '@/components/dashboard/genericFeed.vue'
 
 // Store modules
 import datatable from '@/store/modules/datatable'
+import language from '@/store/modules/language'
 import form from '@/store/modules/form'
 
 // configuration
@@ -25,11 +26,12 @@ Vue.use(A17Config)
 Vue.use(A17Notif)
 
 store.registerModule('datatable', datatable)
+store.registerModule('language', language)
 store.registerModule('form', form)
 
 /* eslint-disable no-new */
 /* eslint no-unused-vars: "off" */
-window.vm = new Vue({
+window[process.env.VUE_APP_NAME].vm = window.vm = new Vue({
   store, // inject store to all children
   el: '#app',
   components: {

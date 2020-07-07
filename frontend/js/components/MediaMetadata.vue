@@ -1,6 +1,27 @@
 <template>
-  <a17-locale v-if="languages.length > 1" type="a17-textfield" :initialValues="initialValues" :attributes="attributes" @change="saveMetadata"></a17-locale>
-  <a17-textfield v-else :label="label" :name="fieldName" type="text" :placeholder="placeholder" :initialValue="initialValue" in-store="value" @change="saveMetadata"></a17-textfield>
+  <a17-locale v-if="languages.length > 1 && fieldType === 'text'"
+              type="a17-textfield"
+              :initialValues="initialValues"
+              :attributes="attributes"
+              @change="saveMetadata">
+  </a17-locale>
+  <a17-textfield v-else-if="fieldType === 'text'"
+                 :label="label"
+                 :name="fieldName"
+                 type="text"
+                 :placeholder="placeholder"
+                 :initialValue="initialValue"
+                 in-store="value"
+                 :maxlength="maxlength"
+                 @change="saveMetadata">
+  </a17-textfield>
+  <div class="mediaMetadata__checkbox" v-else-if="fieldType === 'checkbox'">
+    <a17-checkbox :label="label" :name="fieldName"
+                  :initialValue="initialValue"
+                  :value="1"
+                  @change="saveMetadata"
+                  inStore="value" />
+  </div>
 </template>
 
 <script>
@@ -25,6 +46,15 @@
       label: {
         type: String,
         required: true
+      },
+      type: {
+        type: String,
+        required: false
+      },
+      maxlength: {
+        type: Number,
+        required: false,
+        default: 0
       }
     },
     data: function () {
@@ -36,6 +66,9 @@
     computed: {
       fieldName: function () {
         return `${this.name}[${this.id}]`
+      },
+      fieldType: function () {
+        return this.type ? this.type : 'text'
       },
       defaultMetadatas: function () {
         if (this.media.hasOwnProperty('metadatas')) {
@@ -57,18 +90,24 @@
           name: this.fieldName,
           type: 'text',
           placeholder: this.placeholder,
-          inStore: 'value'
+          inStore: 'value',
+          maxlength: this.maxlength
         }
       },
       placeholder: function () {
         if (this.defaultMetadatas) {
-          return this.defaultMetadatas !== null ? this.defaultMetadatas : ''
+          if (typeof this.defaultMetadatas === 'object') {
+            return this.defaultMetadatas.hasOwnProperty(this.currentLocale) ? this.defaultMetadatas[this.currentLocale] : ''
+          } else {
+            return this.defaultMetadatas !== null ? this.defaultMetadatas : ''
+          }
         } else {
           return ''
         }
       },
       ...mapState({
-        languages: state => state.language.all
+        languages: state => state.language.all,
+        currentLocale: state => state.language.active.value
       })
     },
     methods: {
@@ -85,7 +124,7 @@
       }
     },
     mounted: function () {
-      let initialValues = {}
+      const initialValues = {}
       let initialValue = ''
       let index = 0
 
@@ -95,14 +134,14 @@
         if (this.customMetadatas) {
           if (this.customMetadatas[langVal]) {
             initialValues[langVal] = this.customMetadatas[langVal]
-          } else if (typeof this.customMetadatas === 'string' && index === 0) {
+          } else if ((this.customMetadatas === true || typeof this.customMetadatas === 'string') && index === 0) {
             initialValues[langVal] = this.customMetadatas
             initialValue = this.customMetadatas
           } else {
             initialValues[langVal] = ''
           }
 
-          let field = {}
+          const field = {}
           field.name = this.fieldName
           field.value = initialValues[langVal]
 
@@ -122,3 +161,9 @@
     }
   }
 </script>
+
+<style lang="scss" scoped>
+  .mediaMetadata__checkbox {
+    margin-top: 35px;
+  }
+</style>

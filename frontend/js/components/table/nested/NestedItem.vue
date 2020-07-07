@@ -17,7 +17,7 @@
 
 <script>
   import { DatatableRowMixin } from '@/mixins'
-  import { default as TableCellComponents } from '@/components/table/tableCell'
+  import TableCellComponents from '@/components/table/tableCell'
 
   export default {
     name: 'A17-nested-item',
@@ -29,7 +29,6 @@
 </script>
 
 <style lang="scss" scoped>
-  @import '~styles/setup/_mixins-colors-vars.scss';
 
   .nested-item {
     position: relative;
@@ -41,10 +40,6 @@
 
     &:hover {
       background-color: $color__f--bg;
-
-      /deep/ > .nested-item__cell--draggable .tablecell__handle {
-        display: block;
-      }
     }
   }
 
@@ -80,9 +75,28 @@
       top: 0;
       left: 0;
       bottom: 0;
+    }
+  }
+</style>
 
-      /deep/ .tablecell__handle {
-        transform: translateX(-50%);
+<style lang="scss">
+  .nested-item {
+    &:hover {
+      .nested-item__cell--draggable .tablecell__handle {
+        display: block;
+      }
+    }
+
+    .nested-item__cell {
+      &.nested-item__cell--draggable {
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+
+        .tablecell__handle {
+          transform: translateX(-50%);
+        }
       }
     }
   }

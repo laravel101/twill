@@ -5,16 +5,16 @@
 
       <div class="filter__search">
         <input type="search" class="form__input form__input--small" name="search" :value="searchValue" :placeholder="placeholder" @input="onSearchInput" />
-        <a17-button class="filter__toggle" variant="ghost" @click="toggleFilter" v-if="withHiddenFilters" :aria-expanded="opened ?  'true' : 'false'" >Filter <span v-svg symbol="dropdown_module"></span></a17-button>
+        <a17-button class="filter__toggle" variant="ghost" @click="toggleFilter" v-if="withHiddenFilters" :aria-expanded="opened ?  'true' : 'false'" >{{ $trans('filter.toggle-label', 'Filter') }} <span v-svg symbol="dropdown_module"></span></a17-button>
         <slot name="additional-actions"></slot>
       </div>
     </div>
-    <transition :css='false' :duration="275" @before-enter="beforeEnter" @enter="enter" @after-enter="afterEnter" @before-leave="beforeLeave" @leave="leave">
-      <div class="filter__more" v-show="opened" v-if="withHiddenFilters" :aria-hidden="!opened ? true : null">
-        <div class="filter__moreInner" >
+    <transition :css='false' :duration="275" @before-enter="beforeEnter" @enter="enter" @before-leave="beforeLeave" @leave="leave">
+      <div class="filter__more" v-show="opened" v-if="withHiddenFilters" :aria-hidden="!opened ? true : null" ref="more">
+        <div class="filter__moreInner" ref="moreInner">
           <slot name="hidden-filters"></slot>
-          <a17-button variant="ghost" type="submit">Apply</a17-button>
-          <a17-button v-if="clearOption" variant="ghost" type="button" @click="clear">Clear</a17-button>
+          <a17-button variant="ghost" type="submit">{{ $trans('filter.apply-btn', 'Apply') }}</a17-button>
+          <a17-button v-if="clearOption" variant="ghost" type="button" @click="clear">{{ $trans('filter.clear-btn', 'Clear') }}</a17-button>
         </div>
       </div>
     </transition>
@@ -22,6 +22,7 @@
 </template>
 
 <script>
+  import debounce from 'lodash/debounce'
   import FormDataAsObj from '@/utils/formDataAsObj.js'
 
   export default {
@@ -33,7 +34,9 @@
       },
       placeholder: {
         type: String,
-        default: 'Search'
+        default () {
+          return this.$trans('filter.search-placeholder', 'Search')
+        }
       },
       closed: {
         type: Boolean,
@@ -50,7 +53,8 @@
         open: false,
         withHiddenFilters: true,
         withNavigation: true,
-        searchValue: this.initialSearchValue
+        searchValue: this.initialSearchValue,
+        transitionTimeout: null
       }
     },
     computed: {
@@ -67,38 +71,55 @@
       }
     },
     methods: {
-      getMaxHeight: function () { // retrieve max height depending on the content height
-        return Math.min(250, this.$el.querySelector('.filter__moreInner').clientHeight)
+      getHeight: function () {
+        // Retrieve height from more inner container
+        return this.$refs.moreInner.clientHeight
       },
       beforeEnter: function (el) {
-        el.style.maxHeight = '0px'
+        el.style.height = '0px'
         el.style.overflow = 'hidden'
       },
       enter: function (el, done) {
-        el.style.maxHeight = this.getMaxHeight() + 'px'
+        // Reset height.
+        this.resetHeight()
 
-        const timeOut = window.setTimeout(function () {
-          done()
-          window.clearTimeout(timeOut)
-        }, 275 + 1)
-      },
-      afterEnter: function (el) {
-        el.style.maxHeight = ''
-        el.style.overflow = 'visible'
+        // Delete timeout if exists.
+        if (this.transitionTimeout) {
+          clearTimeout(this.transitionTimeout)
+        }
+
+        // Set timeout.
+        this.transitionTimeout = setTimeout(() => {
+          el.style.overflow = 'visible'
+        }, 275)
+
+        // Add resize event.
+        window.addEventListener('resize', this._resize, false)
       },
       beforeLeave: function (el) {
-        el.style.maxHeight = this.getMaxHeight() + 'px'
+        // Delete timeout if exists.
+        if (this.transitionTimeout) {
+          clearTimeout(this.transitionTimeout)
+        }
+
+        // Reset height.
+        this.resetHeight()
+
+        // Hide content.
         el.style.overflow = 'hidden'
+
+        // Remove resize event.
+        window.removeEventListener('resize', this._resize)
       },
       leave: function (el, done) {
-        el.style.maxHeight = '0px'
+        el.style.height = '0px'
       },
       toggleFilter: function () {
         this.openable = true
         this.open = !this.open
       },
       submitFilter: function () {
-        let formData = FormDataAsObj(this.$refs.form)
+        const formData = FormDataAsObj(this.$refs.form)
         this.$emit('submit', formData)
       },
       onSearchInput: function (event) {
@@ -107,7 +128,17 @@
       clear: function () {
         this.searchValue = ''
         this.$emit('clear')
-      }
+      },
+      resetHeight: function () {
+        // Return if ref is not set.
+        if (!this.$refs.more) return
+
+        // Set height to the container.
+        this.$refs.more.style.height = this.getHeight() + 'px'
+      },
+      _resize: debounce(function () {
+        this.resetHeight()
+      }, 50)
     },
     beforeMount: function () {
       if (!this.$slots.navigation) this.withNavigation = false
@@ -117,19 +148,11 @@
 </script>
 
 <style lang="scss" scoped>
-  @import '~styles/setup/_mixins-colors-vars.scss';
-
-  // .filter {
-  // }
 
   .filter__inner {
-    display:flex;
+    display: flex;
     justify-content: space-between;
   }
-
-  // .filter__navigation {
-  //   flex-grow:1;
-  // }
 
   .filter__search {
     padding:20px 0;
@@ -150,7 +173,11 @@
     div {
       display:inline-block;
 
-      input, button {
+      button, a {
+        vertical-align: middle;
+      }
+
+      input, button, a {
         margin-left:15px;
       }
     }
@@ -174,54 +201,35 @@
   }
 
   .filter__more {
-    max-height: 200px;
-    transition: max-height 0.275s ease;
+    transition: height 0.275s ease;
     overflow: hidden;
   }
 
   .filter__moreInner {
-    padding:20px 0 0 0;
+    padding: 20px 0 0 0;
     border-top:1px solid $color__border;
-
-    /deep/ .input {
-      margin-top:0;
-      margin-bottom:20px;
-      margin-right: 20px;
-    }
 
     button {
       margin-right: 10px;
-      margin-bottom:20px;
+      margin-bottom: 20px;
     }
   }
 
   @include breakpoint('small+') {
     .filter__moreInner {
-      display:flex;
-
-      /deep/ .input {
-        margin-top:0;
-      }
-
-      /deep/ > div {
-        // flex-grow:1;
-        display:flex;
-      }
-
-      /deep/ > div > * {
-        margin-right:20px;
-      }
+      display: flex;
+      flex-flow: row wrap;
     }
   }
 
   .filter__toggle {
-    position:relative;
+    position: relative;
     padding-right:  20px + 20px !important;
-    margin-left:15px !important;
+    margin-left: 15px !important;
 
     .icon {
       transition: all .2s linear;
-      transform:rotate(0deg);
+      transform: rotate(0deg);
       position: absolute;
       right: 20px;
       top: 50%;
@@ -232,13 +240,43 @@
   /* Opened filters */
   .filter--opened {
     .filter__toggle .icon {
-      transform:rotate(180deg);
+      transform: rotate(180deg);
     }
   }
 
   .filter--single {
     .filter__navigation {
-      display:none;
+      display: none;
+    }
+  }
+</style>
+
+<style lang="scss">
+
+  .filter {
+    .filter__moreInner {
+      .input {
+        margin-top: 0;
+        margin-bottom: 20px;
+      }
+    }
+
+    @include breakpoint('small+') {
+      .filter__moreInner {
+        .input {
+          margin-top: 0;
+          margin-right: 20px;
+        }
+
+        > div {
+          display: flex;
+          flex-flow: row wrap;
+        }
+
+        > div > * {
+          margin-right: 20px;
+        }
+      }
     }
   }
 </style>

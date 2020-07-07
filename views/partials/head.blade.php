@@ -1,15 +1,26 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
 <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+<meta name="robots" content="noindex,nofollow" />
 
 <title>{{ config('app.name') }}</title>
 
-{{-- Global styles --}}
-<link href="{{ mix('/assets/admin/css/app.css')}}" rel="stylesheet" />
-
 <!-- Fonts -->
-<link href="/assets/admin/fonts/Inter-UI-Regular.woff2" rel="preload" as="font" type="font/woff2" crossorigin>
-<link href="/assets/admin/fonts/Inter-UI-Medium.woff2" rel="preload" as="font" type="font/woff2" crossorigin>
+@if(app()->isProduction())
+    <link href="{{ twillAsset('Inter-Regular.woff2') }}" rel="preload" as="font" type="font/woff2" crossorigin>
+    <link href="{{ twillAsset('Inter-Medium.woff2') }}" rel="preload" as="font" type="font/woff2" crossorigin>
+@endif
+
+<!-- CSS -->
+@if(app()->isProduction())
+    <link href="{{ twillAsset('chunk-common.css') }}" rel="preload" as="style" crossorigin/>
+    <link href="{{ twillAsset('chunk-vendors.css') }}" rel="preload" as="style" crossorigin/>
+@endif
+
+@unless(config('twill.dev_mode', false))
+    <link href="{{ twillAsset('chunk-common.css') }}" rel="stylesheet" crossorigin/>
+    <link href="{{ twillAsset('chunk-vendors.css' )}}" rel="stylesheet" crossorigin/>
+@endunless
 
 <!-- head.js -->
 <script>

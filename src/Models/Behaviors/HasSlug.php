@@ -2,7 +2,9 @@
 
 namespace A17\Twill\Models\Behaviors;
 
-use DB;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
+
 
 trait HasSlug
 {
@@ -25,12 +27,14 @@ trait HasSlug
 
     public function slugs()
     {
-        return $this->hasMany("App\Models\Slugs\\" . $this->getSlugClassName());
+        return $this->hasMany(
+            config('twill.namespace') . "\Models\Slugs\\" . $this->getSlugClassName()
+        );
     }
 
     public function getSlugClass()
     {
-        $slugClassName = "App\Models\Slugs\\" . $this->getSlugClassName();
+        $slugClassName = config('twill.namespace') . "\Models\Slugs\\" . $this->getSlugClassName();
         return new $slugClassName;
     }
 
@@ -56,6 +60,15 @@ trait HasSlug
         })->with(['slugs']);
     }
 
+    public function scopeForFallbackLocaleSlug($query, $slug)
+    {
+        return $query->whereHas('slugs', function ($query) use ($slug) {
+            $query->whereSlug($slug);
+            $query->whereActive(true);
+            $query->whereLocale(config('translatable.fallback_locale'));
+        })->with(['slugs']);
+    }
+
     public function setSlugs($restoring = false)
     {
         foreach ($this->getSlugParams() as $slugParams) {
@@ -68,7 +81,7 @@ trait HasSlug
         if (in_array($slugParams['locale'], config('twill.slug_utf8_languages', []))) {
             $slugParams['slug'] = $this->getUtf8Slug($slugParams['slug']);
         } else {
-            $slugParams['slug'] = str_slug($slugParams['slug']);
+            $slugParams['slug'] = Str::slug($slugParams['slug']);
         }
 
         //active old slug if already existing or create a new one
@@ -166,9 +179,20 @@ trait HasSlug
         }) ?? null;
     }
 
+    public function getFallbackActiveSlug()
+    {
+        return $this->slugs->first(function ($slug) {
+            return $slug->locale === config('translatable.fallback_locale') && $slug->active;
+        }) ?? null;
+    }
+
     public function getSlug($locale = null)
     {
         if (($slug = $this->getActiveSlug($locale)) != null) {
+            return $slug->slug;
+        }
+
+        if (config('translatable.use_property_fallback', false) && (($slug = $this->getFallbackActiveSlug()) != null)) {
             return $slug->slug;
         }
 
@@ -270,7 +294,7 @@ trait HasSlug
 
     public function getForeignKey()
     {
-        return snake_case(class_basename(get_class($this))) . "_id";
+        return Str::snake(class_basename(get_class($this))) . "_id";
     }
 
     protected function getSuffixSlug()
@@ -342,6 +366,10 @@ trait HasSlug
             'Є' => 'Ye', 'І' => 'I', 'Ї' => 'Yi', 'Ґ' => 'G',
             'є' => 'ye', 'і' => 'i', 'ї' => 'yi', 'ґ' => 'g',
 
+            // Kazakh
+            'Ә' => 'A', 'Ғ' => 'G', 'Қ' => 'Q', 'Ң' => 'N', 'Ө' => 'O', 'Ұ' => 'U',
+            'ә' => 'a', 'ғ' => 'g', 'қ' => 'q', 'ң' => 'n', 'ө' => 'o', 'ұ' => 'u',
+
             // Czech
             'Č' => 'C', 'Ď' => 'D', 'Ě' => 'E', 'Ň' => 'N', 'Ř' => 'R', 'Š' => 'S', 'Ť' => 'T', 'Ů' => 'U',
             'Ž' => 'Z',
@@ -359,6 +387,10 @@ trait HasSlug
             'Š' => 'S', 'Ū' => 'u', 'Ž' => 'Z',
             'ā' => 'a', 'č' => 'c', 'ē' => 'e', 'ģ' => 'g', 'ī' => 'i', 'ķ' => 'k', 'ļ' => 'l', 'ņ' => 'n',
             'š' => 's', 'ū' => 'u', 'ž' => 'z',
+
+            // Romanian
+            'Ă' => 'A', 'Â' => 'A', 'Î' => 'I', 'Ș' => 'S', 'Ț' => 'T',
+            'ă' => 'a', 'â' => 'a', 'î' => 'i', 'ș' => 's', 'ț' => 't',
         );
 
         // Make custom replacements

@@ -3,14 +3,26 @@
 namespace A17\Twill\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 abstract class Request extends FormRequest
 {
+    /**
+     * Determines if the user is authorized to make this request.
+     *
+     * @return bool
+     */
     public function authorize()
     {
         return true;
     }
 
+    /**
+     * Gets the validation rules that apply to the request.
+     *
+     * @return array
+     */
     public function rules()
     {
         switch ($this->method()) {
@@ -22,13 +34,18 @@ abstract class Request extends FormRequest
         return [];
     }
 
+    /**
+     * Gets the validation rules that apply to the translated fields.
+     *
+     * @return array
+     */
     protected function rulesForTranslatedFields($rules, $fields)
     {
         $locales = getLocales();
         $localeActive = false;
         foreach ($locales as $locale) {
             if ($this->request->has('languages')) {
-                $languageFromRequest = collect($this->request->get('languages'))->where('value', $locale)->first();
+                $languageFromRequest = Collection::make($this->request->get('languages'))->where('value', $locale)->first();
                 if ($languageFromRequest['published']) {
                     $localeActive = true;
                     $rules = $this->updateRules($rules, $fields, $locale);
@@ -43,13 +60,19 @@ abstract class Request extends FormRequest
         return $rules;
     }
 
+    /**
+     * @param array $rules
+     * @param array $fields
+     * @param string $locale
+     * @return array
+     */
     private function updateRules($rules, $fields, $locale)
     {
         foreach ($fields as $field => $field_rules) {
             // allows using validation rule that references other fields even for translated fields
-            if (str_contains($field_rules, $fields)) {
+            if (Str::contains($field_rules, $fields)) {
                 foreach ($fields as $fieldName => $fieldRules) {
-                    if (str_contains($field_rules, $fieldName) && starts_with('required_', $field_rules)) {
+                    if (Str::contains($field_rules, $fieldName) && Str::startsWith('required_', $field_rules)) {
                         $field_rules = str_replace($fieldName, "{$fieldName}.{$locale}", $field_rules);
                     }
                 }
@@ -61,6 +84,13 @@ abstract class Request extends FormRequest
         return $rules;
     }
 
+    /**
+     * Gets the error messages for the defined validation rules.
+     *
+     * @param array $messages
+     * @param array $fields
+     * @return array
+     */
     protected function messagesForTranslatedFields($messages, $fields)
     {
         foreach (getLocales() as $locale) {
@@ -70,6 +100,12 @@ abstract class Request extends FormRequest
         return $messages;
     }
 
+    /**
+     * @param array $messages
+     * @param array $fields
+     * @param string $locale
+     * @return array
+     */
     private function updateMessages($messages, $fields, $locale)
     {
         foreach ($fields as $field => $message) {
@@ -81,5 +117,4 @@ abstract class Request extends FormRequest
 
         return $messages;
     }
-
 }

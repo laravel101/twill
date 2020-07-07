@@ -4,6 +4,14 @@ vendor/
 !frontend/scss/vendor
 /node_modules
 assets/dist/*
-mix-manifest.json
-public/
 frontend/js/components/blocks/customs/*
+frontend/js/components/customs/*
+!frontend/js/components/customs/.keep
+.DS_Store
+public/
+tests/coverage
+tests/storage
+.phpunit.result.cache
+.php_cs.cache
+.env.local
+.env.*.local
